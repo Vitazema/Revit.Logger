@@ -8,7 +8,7 @@
     /// <summary>
     /// Application
     /// </summary>
-    public class LogApplication : IExternalApplication
+    public class ApplicationLog : IExternalApplication
     {
         /// <summary>
         /// Событие загрузки приложения
@@ -43,7 +43,8 @@
 
         private void AppDialogShowing(object sender, DialogBoxShowingEventArgs e)
         {
-            if (!(e is TaskDialogShowingEventArgs window)) return;
+            if (!(e is TaskDialogShowingEventArgs window))
+                return;
             var type = window.DialogId;
             var msg = window.Message;
         }

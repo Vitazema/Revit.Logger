@@ -19,12 +19,10 @@
         {
             try
             {
-                application.DialogBoxShowing +=
-                    new EventHandler<DialogBoxShowingEventArgs>(AppDialogShowing);
+                application.ControlledApplication.FailuresProcessing += FailureProcessor.OnFailuresProcessing;
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
                 return Result.Failed;
             }
 
@@ -38,15 +36,16 @@
         /// <returns></returns>
         public Result OnShutdown(UIControlledApplication application)
         {
-            return Result.Succeeded;
-        }
+            try
+            {
+                application.ControlledApplication.FailuresProcessing -= FailureProcessor.OnFailuresProcessing;
+            }
+            catch (Exception e)
+            {
+                return Result.Failed;
+            }
 
-        private void AppDialogShowing(object sender, DialogBoxShowingEventArgs e)
-        {
-            if (!(e is TaskDialogShowingEventArgs window))
-                return;
-            var type = window.DialogId;
-            var msg = window.Message;
+            return Result.Succeeded;
         }
     }
 }

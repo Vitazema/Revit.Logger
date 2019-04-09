@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApplicationLog.cs" />
+    <Compile Include="FailureProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -80,10 +81,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"%25ProgramFiles%25\Microsoft SDKs\ClickOnce\SignTool\signtool.exe" sign /f "$(SolutionDir)pp2018_digicert.pfx" /t http://timestamp.digicert.com /p pp2018 /v $(TargetPath)
-if $(ConfigurationName) == Release (
-   "$(PluginUtilityPath)" deploy --env=prod --outdir="$(OutDir)." --path="$(ProjectDir)
-)</PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Debug (
+      "$(PluginUtilityPath)" deploy --env=dev --outdir="$(OutDir)." --path="$(ProjectDir)
+      )
+      if $(ConfigurationName) == Release (
+      "$(PluginUtilityPath)" deploy --env=prod --outdir="$(OutDir)." --path="$(ProjectDir)
+      )
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

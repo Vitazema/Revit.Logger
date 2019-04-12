@@ -1,9 +1,7 @@
 namespace RevitLogProjectLocation
 {
-    using System.Collections.Generic;
     using Autodesk.Revit.DB;
     using Autodesk.Revit.DB.Events;
-    using Autodesk.Revit.UI;
     using Revit_Lib;
 
     /// <summary>

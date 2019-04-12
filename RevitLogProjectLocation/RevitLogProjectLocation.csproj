@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="ApplicationLog.cs" />
     <Compile Include="FailureProcessor.cs" />
+    <Compile Include="Model\LocationLog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -80,6 +80,9 @@
       <Version>1.0.2</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="RevitLogProjectLocation.addin" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Debug (
@@ -88,7 +91,9 @@
       if $(ConfigurationName) == Release (
       "$(PluginUtilityPath)" deploy --env=prod --outdir="$(OutDir)." --path="$(ProjectDir)
       )
-    </PostBuildEvent>
+if exist "$(AppData)\Autodesk\REVIT\Addins\2017" copy "$(ProjectDir)*.addin" "$(AppData)\Autodesk\REVIT\Addins\2017"
+if exist "$(AppData)\Autodesk\REVIT\Addins\2017" copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\2017"
+if exist "$(AppData)\Autodesk\REVIT\Addins\2017" copy "$(ProjectDir)$(OutputPath)*.pdb" "$(AppData)\Autodesk\REVIT\Addins\2017"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

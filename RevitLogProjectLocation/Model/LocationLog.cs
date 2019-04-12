@@ -27,6 +27,8 @@ namespace RevitLogProjectLocation.Model
         /// </summary>
         public string ProviderFileName { get; set; }
 
+        public string ProviderFileFullName { get; set; }
+
         /// <summary>
         /// Координаты базовой точки
         /// </summary>
@@ -38,12 +40,17 @@ namespace RevitLogProjectLocation.Model
         public DateTime ChangedDate { get; set; }
 
         /// <summary>
-        /// Автор изменения
+        /// Имя пользователя в Ревите
         /// </summary>
         public string Author { get; set; }
 
         /// <summary>
-        /// Автор изменения
+        /// Имя пользователя компьютера
+        /// </summary>
+        public string AccountUser { get; set; }
+
+        /// <summary>
+        /// Удачно ли прошло измнение координат в файле
         /// </summary>
         public bool Success { get; set; }
     }

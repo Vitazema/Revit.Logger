@@ -54,6 +54,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
@@ -66,7 +67,7 @@
   <ItemGroup>
     <Compile Include="ApplicationLog.cs" />
     <Compile Include="FailureProcessor.cs" />
-    <Compile Include="Model\LocationLog.cs" />
+    <Compile Include="Logger\LocationLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +80,12 @@
     <PackageReference Include="StyleCop.Analyzers">
       <Version>1.0.2</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RevitLog.SDK\RevitLog.SDK.csproj">
+      <Project>{cd78fb06-ed3f-4ee2-9ce5-22d5740efe49}</Project>
+      <Name>RevitLog.SDK</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

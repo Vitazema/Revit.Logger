@@ -1,11 +1,11 @@
-namespace RevitLogProjectLocation.Model
+namespace RevitLogSdk.Dto
 {
     using System;
 
     /// <summary>
     /// Лог изменения координат
     /// </summary>
-    public class LocationLogDto
+    public class LocationLogDto : DtoBase
     {
         /// <summary>
         /// Имя площадки
@@ -26,6 +26,11 @@ namespace RevitLogProjectLocation.Model
         /// Файл из которого берем координаты (связь) имя
         /// </summary>
         public string ProviderFileName { get; set; }
+        
+        /// <summary>
+        /// Файл из которого берем координаты (связь) имя
+        /// </summary>
+        public string ProviderFileFullName { get; set; }
 
         /// <summary>
         /// Координаты базовой точки

@@ -6,14 +6,16 @@
     using Autodesk.Revit.DB.Events;
     using Autodesk.Revit.UI;
     using Autodesk.Revit.UI.Events;
-    using Model;
+    using RevitLogSdk.Dto;
 
     /// <summary>
     /// Application
     /// </summary>
     public class ApplicationLog : IExternalApplication
     {
-        public static string ActiveDocumentTitle { get; set; }
+        private LocationLogger _logger;
+
+        private static string ActiveDocumentTitle { get; set; }
 
         /// <summary>
         /// Событие загрузки приложения
@@ -29,6 +31,7 @@
                 application.ViewActivated += new EventHandler<ViewActivatedEventArgs>(OnViewActivated);
                 application.DialogBoxShowing += new EventHandler<DialogBoxShowingEventArgs>(AppDialogShowing);
                 application.ControlledApplication.FailuresProcessing += FailureProcessor.OnFailuresProcessing;
+                _logger = new LocationLogger();
             }
             catch (Exception e)
             {

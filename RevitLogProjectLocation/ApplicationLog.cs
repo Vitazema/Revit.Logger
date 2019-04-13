@@ -13,7 +13,10 @@
     /// </summary>
     public class ApplicationLog : IExternalApplication
     {
+        public static string ActiveDocumentTitle { get; set; }
         private LocationLogger _logger;
+        public static string ActiveDocumentFullPath { get; set; }
+        public static string RevitUserName { get; set; }
 
         private static string ActiveDocumentTitle { get; set; }
 
@@ -67,7 +70,9 @@
 
             // Сохранение имени активного документа для использования в 
             // валидации изменения площадки !текущего файла!
+            RevitUserName = currentActiveDoc.Application.Username;
             ActiveDocumentTitle = currentActiveDoc.Title;
+            ActiveDocumentFullPath = currentActiveDoc.PathName;
         }
 
         private void OnDocumentChanged(object sender, DocumentChangedEventArgs e)
@@ -77,10 +82,16 @@
             var modifiedElementsId = e.GetModifiedElementIds();
 
             // Кэширование данных (маркеры изменения координат)
-            // Данные о расположении
+            // Данные о расположении файла
             ProjectLocation projectLocation = null;
+
+            // Базовая точка
             BasePoint basePoint = null;
+
+            // Площадка с общими координатами
             SiteLocation siteLocation = null;
+
+            // Возможные провайдеры координат
             RevitLinkInstance rvtPositionProvider = null;
             ImportInstance dwgPositionProvider = null;
 
@@ -137,26 +148,55 @@
                     extractedSiteName = providerFileName.Substring(spaceIdx);
                 }
 
-                var logging = $"ProviderFileName: {positionProviderName}" +
-                              $"SiteName: {projectLocation.Name}" +
-                              $"ParentFile: {ActiveDocumentTitle}" +
-                              $"ProviderSiteName: {extractedSiteName}";
+                // todo: Извлечение полного пути к файлу
+                string providerFileFullName = $"...типо путь к файлу/{positionProviderName}";
+
+/*/                if (rvtPositionProvider != null)
+//                {
+//                    providerFileFullName = rvtPositionProvider
+//                        .GetExternalFileReference()
+//                        .GetAbsolutePath()
+//                        .CentralServerPath;
+//                }
+//                else
+//                {
+//                    providerFileFullName = dwgPositionProvider
+//                        .GetExternalFileReference()
+//                        .GetAbsolutePath()
+//                        .CentralServerPath;
+//                }
+/*/
+
+                var log = new LocationLogDto()
+                {
+                  SiteName = projectLocation.Name,
+                  ParentFileName = ActiveDocumentTitle,
+                  ParentFileFullName = ActiveDocumentFullPath,
+                  ProviderFileName = positionProviderName,
+                  ProviderFileFullName = providerFileFullName,
+                  LocationBase = GetXyzStr(basePoint?.Location as LocationPoint),
+                  ChangedDate = DateTime.Now,
+                  Author = RevitUserName,
+                  AccountUser = Environment.UserName,
+                  Success = true
+                };
             }
 
             // ИВЕНТ ИЗМЕНЕНИЯ КООРДИНАТ В ПРОЕКТЕ
             if (siteLocation == null)
             {
-                var logging = $"ProviderFileName: {ActiveDocumentTitle}" +
-                              $"SiteName: {projectLocation.Name}" +
-                              $"ParentFile: {ActiveDocumentTitle}";
-
                 var log = new LocationLogDto()
                 {
-                    Success = true,
-                    Author = Environment.UserName,
-                    ChangedDate = DateTime.Now,
-                    LocationBase = GetXyzStr(basePoint?.Location as LocationPoint),
+                    SiteName = projectLocation.Name,
                     ParentFileName = ActiveDocumentTitle,
+                    ParentFileFullName = ActiveDocumentFullPath,
+                    ProviderFileName = null,
+                    ProviderFileFullName = null,
+                    LocationBase = GetXyzStr(basePoint?.Location as LocationPoint),
+                    ChangedDate = DateTime.Now,
+                    Author = RevitUserName,
+                    AccountUser = Environment.UserName,
+                    Success = true
                 };
 
                 // todo запись в бд
@@ -168,7 +208,7 @@
             if (point == null)
                 return string.Empty;
             var point3d = point.Point;
-            return point3d.X + ";" + point3d.Y + point3d.Z;
+            return point3d.X + ";" + point3d.Y + ";" + point3d.Z;
         }
 
         private void AppDialogShowing(object sender, DialogBoxShowingEventArgs e)

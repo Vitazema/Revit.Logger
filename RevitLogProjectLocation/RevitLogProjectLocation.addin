@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Application RevitLogProjectLocation</Name>
+    <Assembly>RevitLogProjectLocation.dll</Assembly>
+    <FullClassName>RevitLogProjectLocation.ApplicationLog</FullClassName>
+    <ClientId>b851a738-d9b5-44a8-9187-54d5c47aad27</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>

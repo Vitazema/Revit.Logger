@@ -32,8 +32,6 @@ namespace RevitLogSdk.Dto
         /// </summary>
         public string ProviderFileFullName { get; set; }
 
-        public string ProviderFileFullName { get; set; }
-
         /// <summary>
         /// Координаты базовой точки
         /// </summary>
@@ -52,7 +50,7 @@ namespace RevitLogSdk.Dto
         /// <summary>
         /// Имя пользователя компьютера
         /// </summary>
-        public string AccountUser { get; set; }
+        public string UserName { get; set; }
 
         /// <summary>
         /// Удачно ли прошло измнение координат в файле

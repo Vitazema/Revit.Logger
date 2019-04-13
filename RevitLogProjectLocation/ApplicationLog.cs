@@ -152,6 +152,7 @@
 
                 var log = new LocationLogDto()
                 {
+                    Success = true,
                     Author = Environment.UserName,
                     ChangedDate = DateTime.Now,
                     LocationBase = GetXyzStr(basePoint?.Location as LocationPoint),

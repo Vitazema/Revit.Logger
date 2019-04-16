@@ -17,14 +17,9 @@
         private LocationLogger _logger;
 
         /// <summary>
-        /// Полное название активного документа
-        /// </summary>
-        public string ActiveDocumentFullPath { get; set; }
-
-        /// <summary>
         /// Имя пользователя в Revit
         /// </summary>
-        public string RevitUserName { get; set; }
+        private string RevitUserName { get; set; }
 
         /// <summary>
         /// Имя активного документа
@@ -47,7 +42,7 @@
                 application.ControlledApplication.FailuresProcessing += FailureProcessor.OnFailuresProcessing;
                 _logger = new LocationLogger();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return Result.Failed;
             }
@@ -69,7 +64,7 @@
                 application.ControlledApplication.DocumentOpened -= OnDocumentOpened;
                 application.ViewActivated += OnViewActivated;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return Result.Failed;
             }
@@ -82,8 +77,8 @@
         /// </summary>
         private void OnDocumentOpened(object sender, DocumentOpenedEventArgs e)
         {
-            var currentActiveDoc = e.Document;
-            RevitUserName = currentActiveDoc?.Application.Username;
+            // Сохранение имени пользователя в Ревит для заполнения поля в логере
+            RevitUserName = e.Document?.Application.Username;
         }
 
         /// <summary>
@@ -91,139 +86,127 @@
         /// </summary>
         private void OnViewActivated(object sender, ViewActivatedEventArgs e)
         {
-            var activeView = e.CurrentActiveView;
-            var currentActiveDoc = activeView.Document;
-
             // Сохранение имени активного документа для использования в
             // валидации изменения площадки !текущего файла!
-            RevitUserName = currentActiveDoc.Application.Username;
-            ActiveDocumentFullPath = currentActiveDoc.GetSharingModelPath();
-            ActiveDocumentTitle = currentActiveDoc.Title;
+            ActiveDocumentTitle = e.CurrentActiveView.Document.Title;
         }
 
         private void OnDocumentChanged(object sender, DocumentChangedEventArgs e)
         {
-            var doc = e.GetDocument();
-            var modifiedElementsId = e.GetModifiedElementIds();
-
-            // Кэширование данных (маркеры изменения координат)
-            // Данные о расположении файла
-            ProjectLocation projectLocation = null;
-            BasePoint basePoint = null;
-
-            // Площадка с общими координатами
-            SiteLocation siteLocation = null;
-
-            // Возможные провайдеры координат
-            RevitLinkInstance rvtPositionProvider = null;
-            ImportInstance dwgPositionProvider = null;
-
-            foreach (var elementId in modifiedElementsId)
+            try
             {
-                var element = doc.GetElement(elementId);
+                // Выбираем текущий файл изменяемой площадки как родительский
+                var parentDoc = e.GetDocument();
 
-                // Пропускаем элементы, не относящиеся к данному файлу
-                if (element == null || element.Document.Title != ActiveDocumentTitle)
-                    continue;
+                // Пропускаем ивенты, не относящиеся к данному файлу
+                if (parentDoc.Title != ActiveDocumentTitle)
+                    return;
 
-                // Проверяем категорию изменённого элемента на принадлежность к маркерам изменения общих координат
-                switch (element)
+                var modifiedElementsId = e.GetModifiedElementIds();
+
+                // Кэширование данных (маркеры изменения координат)
+                // Данные о расположении файла
+                ProjectLocation projectLocation = null;
+                BasePoint basePoint = null;
+
+                // Площадка с общими координатами
+                SiteLocation siteLocation = null;
+
+                // Возможный провайдер координат
+                Instance positionProvider = null;
+
+                foreach (var elementId in modifiedElementsId)
                 {
-                    case ProjectLocation loc:
-                        projectLocation = loc.Document.ActiveProjectLocation;
-                        break;
-                    case BasePoint loc:
-                        basePoint = loc;
-                        break;
-                    case RevitLinkInstance link:
-                        rvtPositionProvider = link;
-                        break;
-                    case ImportInstance link:
-                        dwgPositionProvider = link;
-                        break;
-                    case SiteLocation site:
-                        siteLocation = site;
-                        break;
-                }
-            }
+                    var element = parentDoc.GetElement(elementId);
 
-            // Фильтруем события, не относящиеся к изменению площадок
-            if (projectLocation == null)
-                return;
-
-            // ИВЕНТ ПРИНЯТИЯ КООРДИНАТ ИЗ СВЯЗИ
-            if (siteLocation != null && (rvtPositionProvider != null || dwgPositionProvider != null))
-            {
-                var linkDoc = rvtPositionProvider?.GetLinkDocument();
-
-                // не самый рабочий вариант, т.к. некрасивый и в случае с dwg - не предоставляет имя площадки провайдера
-                var providerFileFullName = dwgPositionProvider != null
-                    ? dwgPositionProvider.get_Parameter(BuiltInParameter.ELEM_TYPE_PARAM).AsValueString()
-                    : linkDoc.GetSharingModelPath();
-
-                // Извлечение имени площадки файла-провайдера
-                string extractedSiteName = null;
-                var providerSiteName = providerFileFullName.Split(':');
-                if (providerSiteName.Count() > 1)
-                {
-                    var providerFileName = providerSiteName.Last().Trim();
-                    var spaceIdx = providerFileName.IndexOf(" ", StringComparison.Ordinal) + 1;
-                    extractedSiteName = providerFileName.Substring(spaceIdx);
+                    // Проверяем категорию изменённого элемента на принадлежность к маркерам изменения общих координат
+                    switch (element)
+                    {
+                        case ProjectLocation loc:
+                            projectLocation = loc.Document.ActiveProjectLocation;
+                            break;
+                        case BasePoint loc:
+                            basePoint = loc;
+                            break;
+                        case Instance link:
+                            positionProvider = link;
+                            break;
+                        case SiteLocation site:
+                            siteLocation = site;
+                            break;
+                    }
                 }
 
-                // todo: Извлечение полного пути к файлу
-                string positionProviderName = $"...типо путь к файлу/{providerFileFullName}";
-
-/*/                if (rvtPositionProvider != null)
-//                {
-//                    providerFileFullName = rvtPositionProvider
-//                        .GetExternalFileReference()
-//                        .GetAbsolutePath()
-//                        .CentralServerPath;
-//                }
-//                else
-//                {
-//                    providerFileFullName = dwgPositionProvider
-//                        .GetExternalFileReference()
-//                        .GetAbsolutePath()
-//                        .CentralServerPath;
-//                }
-/*/
-
-                var log = new LocationLogDto()
+                // ИВЕНТ ПРИНЯТИЯ КООРДИНАТ ИЗ СВЯЗИ
+                if (projectLocation != null &&
+                    siteLocation != null &&
+                    positionProvider != null)
                 {
-                    SiteName = projectLocation.Name,
-                    ParentFileName = ActiveDocumentTitle,
-                    ParentFileFullName = ActiveDocumentFullPath,
-                    ProviderFileName = positionProviderName,
-                    ProviderFileFullName = providerFileFullName,
-                    LocationBase = basePoint?.Location.ToXyzStr(),
-                    ChangedDate = DateTime.Now,
-                    Author = RevitUserName,
-                    UserName = Environment.UserName,
-                    Success = true
-                };
+                    var providerFileName = string.Empty;
+                    var providerFileFullName = string.Empty;
+
+                    switch (positionProvider)
+                    {
+                        case RevitLinkInstance rvtPositionProvider:
+
+                            // возможно будет производительнее, если не зайдействовать документ связанного файла
+                            var linkDoc = rvtPositionProvider.GetLinkDocument();
+                            providerFileName = linkDoc.Title;
+                            providerFileFullName = linkDoc.GetDocFullPath();
+                            break;
+
+                        case ImportInstance dwgPositionProvider:
+                            if (parentDoc.GetElement(dwgPositionProvider.GetTypeId()) is CADLinkType dwgTypeProvider)
+                            {
+                                providerFileName = dwgTypeProvider.Name;
+                                var dwgRef = dwgTypeProvider.GetExternalFileReference();
+                                providerFileFullName =
+                                    ModelPathUtils.ConvertModelPathToUserVisiblePath(dwgRef.GetAbsolutePath());
+                            }
+
+                            break;
+                    }
+                    
+                    var log = new LocationLogDto()
+                    {
+                        SiteName = projectLocation.Name,
+                        ParentFileName = ActiveDocumentTitle,
+                        ParentFileFullName = parentDoc.GetDocFullPath(),
+                        ProviderFileName = providerFileName,
+                        ProviderFileFullName = providerFileFullName,
+                        LocationBase = basePoint?.ToXyzStr(),
+                        ChangedDate = DateTime.Now,
+                        Author = RevitUserName,
+                        UserName = Environment.UserName,
+                        Success = true
+                    };
+                    _logger.WriteLog(log);
+                }
+
+                // ИВЕНТ ИЗМЕНЕНИЯ КООРДИНАТ В ПРОЕКТЕ
+                else if (projectLocation != null && siteLocation == null)
+                {
+                    var log = new LocationLogDto()
+                    {
+                        SiteName = projectLocation.Name,
+                        ParentFileName = ActiveDocumentTitle,
+                        ParentFileFullName = parentDoc.GetDocFullPath(),
+                        ProviderFileName = null,
+                        ProviderFileFullName = null,
+                        LocationBase = basePoint?.ToXyzStr(),
+                        ChangedDate = DateTime.Now,
+                        Author = RevitUserName,
+                        UserName = Environment.UserName,
+                        Success = true
+                    };
+
+                    // Запись в БД
+                    _logger.WriteLog(log);
+                }
             }
-
-            // ИВЕНТ ИЗМЕНЕНИЯ КООРДИНАТ В ПРОЕКТЕ
-            if (siteLocation == null)
+            catch (Exception)
             {
-                var log = new LocationLogDto()
-                {
-                    SiteName = projectLocation.Name,
-                    ParentFileName = ActiveDocumentTitle,
-                    ParentFileFullName = ActiveDocumentFullPath,
-                    ProviderFileName = null,
-                    ProviderFileFullName = null,
-                    LocationBase = basePoint?.Location.ToXyzStr(),
-                    ChangedDate = DateTime.Now,
-                    Author = RevitUserName,
-                    UserName = Environment.UserName,
-                    Success = true
-                };
-
-                // Запись в БД
-                // _logger.WriteLog(log);
+                // Пропускаем
             }
         }
 

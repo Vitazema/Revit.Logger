@@ -28,7 +28,12 @@ namespace RevitLogProjectLocation
             return xyz.GetRoundedValuesAsString();
         }
 
-        public static double Normalize(this double value)
+        /// <summary>
+        /// Отсечение замыкающих нулей
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double RemoveTrailingZeros(this double value)
         {
             return value / 1.0000;
         }
@@ -41,6 +46,22 @@ namespace RevitLogProjectLocation
         public static double ToDegrees(this double a)
         {
             return UnitUtils.ConvertFromInternalUnits(a, DisplayUnitType.DUT_DECIMAL_DEGREES);
+        }
+        
+        /// <summary>
+        /// Убирает маркер имени пользователя в имени файла, если файл Ревита открыт как локальный
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        public static string RemoveUserFileMark(this string fileName, string username)
+        {
+            if (fileName.ToUpper().EndsWith(username.ToUpper()))
+            {
+                return fileName.Substring(0, fileName.Length + username.Length + 1);
+            }
+
+            return fileName;
         }
 
         /// <summary>
@@ -56,7 +77,7 @@ namespace RevitLogProjectLocation
 
             if (doc.IsDetached)
             {
-                parentFileFullName = "Отсоединено:" + ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
+                parentFileFullName = "Отсоединено";
             }
             else if (modelPath != null)
             {

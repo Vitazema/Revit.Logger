@@ -2,8 +2,10 @@
 {
     using System.Globalization;
     using System.Linq;
-    using System.Windows.Documents;
 
+    /// <summary>
+    /// Класс обработки координат в читабельный вид для передачи в БД
+    /// </summary>
     public class Position
     {
         public Position(double x, double y, double z, double angle)
@@ -33,10 +35,14 @@
         /// Угол поворота координатных осей
         /// </summary>
         public double Angle { get; set; }
-
+        
+        /// <summary>
+        /// Причёсывание отображения координат в строчном виде для передачи в БД
+        /// </summary>
+        /// <returns></returns>
         public string GetRoundedValuesAsString()
         {
-            var v = new double[] { X, Y, Z, Angle }.Select(x => x.Normalize().ToString(CultureInfo.InvariantCulture)).ToArray();
+            var v = new double[] { X, Y, Z, Angle }.Select(x => x.RemoveTrailingZeros().ToString(CultureInfo.InvariantCulture)).ToArray();
             var res = string.Join(";", v);
             return res;
         }

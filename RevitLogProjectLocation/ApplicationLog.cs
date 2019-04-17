@@ -1,13 +1,13 @@
 ﻿namespace RevitLogProjectLocation
 {
     using System;
-    using System.Linq;
     using Autodesk.Revit.DB;
     using Autodesk.Revit.DB.Events;
     using Autodesk.Revit.UI;
     using Autodesk.Revit.UI.Events;
+    using Revit_Lib.Loger;
     using RevitLogSdk.Dto;
-  
+
     /// <summary>
     /// Application
     /// </summary>
@@ -41,7 +41,7 @@
             {
                 application.ControlledApplication.DocumentChanged += OnDocumentChanged;
                 application.ViewActivated += OnViewActivated;
-                /*application.DialogBoxShowing += new EventHandler<DialogBoxShowingEventArgs>(AppDialogShowing);*/
+                application.DialogBoxShowing += new EventHandler<DialogBoxShowingEventArgs>(AppDialogShowing);
                 application.ControlledApplication.FailuresProcessing += FailureProcessor.OnFailuresProcessing;
                 _logger = new LocationLogger();
             }
@@ -86,34 +86,34 @@
 
         private void OnDocumentChanged(object sender, DocumentChangedEventArgs e)
         {
-            // Функция установки путей к файлу из которого принимаются координаты
-            void SetProviderInfo(Document parentDoc, Instance positionProvider)
-            {
-                switch (positionProvider)
-                {
-                    case RevitLinkInstance rvtPositionProvider:
-
-                        // возможно будет производительнее, если не зайдействовать документ связанного файла
-                        var linkDoc = rvtPositionProvider.GetLinkDocument();
-                        ProviderFileName = System.IO.Path.ChangeExtension(linkDoc.Title, null);
-                        ProviderFileFullName = linkDoc.GetDocFullPath();
-                        break;
-
-                    case ImportInstance dwgPositionProvider:
-                        if (parentDoc.GetElement(dwgPositionProvider.GetTypeId()) is CADLinkType dwgTypeProvider)
-                        {
-                            ProviderFileName = dwgTypeProvider.Name;
-                            var dwgRef = dwgTypeProvider.GetExternalFileReference();
-                            ProviderFileFullName =
-                                ModelPathUtils.ConvertModelPathToUserVisiblePath(dwgRef.GetAbsolutePath());
-                        }
-
-                        break;
-                }
-            }
-
             try
             {
+                // Функция установки путей к файлу из которого принимаются координаты
+                void SetProviderInfo(Document parDoc, Instance posProvider)
+                {
+                    switch (posProvider)
+                    {
+                        case RevitLinkInstance rvtPositionProvider:
+
+                            // возможно будет производительнее, если не зайдействовать документ связанного файла
+                            var linkDoc = rvtPositionProvider.GetLinkDocument();
+                            ProviderFileName = System.IO.Path.ChangeExtension(linkDoc.Title, null);
+                            ProviderFileFullName = linkDoc.GetDocFullPath();
+                            break;
+
+                        case ImportInstance dwgPositionProvider:
+                            if (parDoc.GetElement(dwgPositionProvider.GetTypeId()) is CADLinkType dwgTypeProvider)
+                            {
+                                ProviderFileName = dwgTypeProvider.Name;
+                                var dwgRef = dwgTypeProvider.GetExternalFileReference();
+                                ProviderFileFullName =
+                                    ModelPathUtils.ConvertModelPathToUserVisiblePath(dwgRef.GetAbsolutePath());
+                            }
+
+                            break;
+                    }
+                }
+
                 // Выбираем текущий файл изменяемой площадки как родительский
                 var parentDoc = e.GetDocument();
 
@@ -162,7 +162,6 @@
                     positionProvider != null &&
                     basePoint != null)
                 {
-
                     SetProviderInfo(parentDoc, positionProvider);
                     var log = new LocationLogDto()
                     {
@@ -236,9 +235,9 @@
                     _logger.WriteLog(log);
                 }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                // Пропускаем
+                Log.Error("Ошибка выполнения команды", exception);
             }
         }
 
@@ -246,37 +245,33 @@
         {
             if (e is TaskDialogShowingEventArgs window)
             {
-                /*/*var type = window.DialogId;
-                var msg = window.Message;#1#
-            
-                // Get the string id of the showing dialog
                 string dialogId = e.DialogId;
                 if (dialogId.Contains("Customer"))
                     return;
-            
-                // Format the prompt information string
-                string promptInfo = "A Revit dialog will be opened.\n";
-                promptInfo += "The DialogId of this dialog is " + dialogId + "\n";
-                promptInfo += "If you don't want the dialog to open, please press cancel button";
-            
-                // Show the prompt message, and allow the user to close the dialog directly.
-                TaskDialog taskDialog = new TaskDialog("Revit");
-                taskDialog.Id = "Customer DialogId";
-                taskDialog.MainContent = promptInfo;
-                TaskDialogCommonButtons buttons = TaskDialogCommonButtons.Ok |
-                                                  TaskDialogCommonButtons.Cancel;
-                taskDialog.CommonButtons = buttons;
-                TaskDialogResult result = taskDialog.Show();
-                if (result == TaskDialogResult.Cancel)
+                string promptInfo = "Сообщение в окне";
+                var td = new TaskDialog("Revit");
+                td.Id = "Customer DialogId";
+                td.MainContent = promptInfo;
+                td.AddCommandLink(TaskDialogCommandLinkId.CommandLink1, "Сохранить'.");
+                td.AddCommandLink(TaskDialogCommandLinkId.CommandLink2, "Не'.");
+                td.AddCommandLink(TaskDialogCommandLinkId.CommandLink3, "Отмена");
+                var buttons = TaskDialogCommonButtons.Cancel;
+                td.CommonButtons = buttons;
+                var result = td.Show();
+                if (result == TaskDialogResult.CommandLink1)
+                {
+                }
+                else if (result == TaskDialogResult.CommandLink2)
+                {
+                }
+                else if (result == TaskDialogResult.CommandLink3)
+                {
+                }
+                else if (result == TaskDialogResult.Cancel)
                 {
                     // Do not show the Revit dialog
                     e.OverrideResult(1);
                 }
-                else
-                {
-                    // Continue to show the Revit dialog
-                    e.OverrideResult(0);
-                }*/
             }
         }
     }

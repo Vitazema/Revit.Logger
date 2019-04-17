@@ -258,19 +258,20 @@
                 var buttons = TaskDialogCommonButtons.Cancel;
                 td.CommonButtons = buttons;
                 var result = td.Show();
-                if (result == TaskDialogResult.CommandLink1)
+                switch (result)
                 {
-                }
-                else if (result == TaskDialogResult.CommandLink2)
-                {
-                }
-                else if (result == TaskDialogResult.CommandLink3)
-                {
-                }
-                else if (result == TaskDialogResult.Cancel)
-                {
-                    // Do not show the Revit dialog
-                    e.OverrideResult(1);
+                    case TaskDialogResult.CommandLink1:
+                        e.OverrideResult(1);
+                        break;
+                    case TaskDialogResult.CommandLink2:
+                        e.OverrideResult(2);
+                        break;
+                    case TaskDialogResult.CommandLink3:
+                        e.OverrideResult(3);
+                        break;
+                    case TaskDialogResult.Cancel:
+                        e.OverrideResult(4);
+                        break;
                 }
             }
         }

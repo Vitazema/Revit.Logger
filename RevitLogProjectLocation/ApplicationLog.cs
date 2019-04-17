@@ -246,7 +246,7 @@
             if (e is TaskDialogShowingEventArgs window)
             {
                 string dialogId = e.DialogId;
-                if (dialogId.Contains("Customer"))
+                if (dialogId != "TaskDialog_Location_Position_Changed" && dialogId.Contains("Customer"))
                     return;
                 string promptInfo = "Сообщение в окне";
                 var td = new TaskDialog("Revit");
@@ -261,16 +261,16 @@
                 switch (result)
                 {
                     case TaskDialogResult.CommandLink1:
-                        e.OverrideResult(1);
+                        e.OverrideResult(1001);
                         break;
                     case TaskDialogResult.CommandLink2:
-                        e.OverrideResult(2);
+                        e.OverrideResult(1002);
                         break;
                     case TaskDialogResult.CommandLink3:
-                        e.OverrideResult(3);
+                        e.OverrideResult(1003);
                         break;
                     case TaskDialogResult.Cancel:
-                        e.OverrideResult(4);
+                        e.OverrideResult(1);
                         break;
                 }
             }

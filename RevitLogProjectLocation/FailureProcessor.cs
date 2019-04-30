@@ -1,8 +1,10 @@
 namespace RevitLogProjectLocation
 {
+    using System;
     using Autodesk.Revit.DB;
     using Autodesk.Revit.DB.Events;
     using Revit_Lib;
+    using Revit_Lib.Loger;
 
     /// <summary>
     /// Обработчик ошибок Ревит
@@ -22,7 +24,8 @@ namespace RevitLogProjectLocation
                 var transName = f.GetTransactionName();
                 if (!transName.Equals("Изменение исходных общих координат")
                     && !transName.Equals("Перетаскивание")
-                    && !transName.Equals("Перенести"))
+                    && !transName.Equals("Перенести")
+                    && !transName.Equals("Повернуть"))
                     return;
 
                 var failures = f.GetFailureMessages();
@@ -32,7 +35,7 @@ namespace RevitLogProjectLocation
                     return;
                 }
 
-                if (AccessHelper.IsBIM)
+                if (AccessHelper.IsBIM || AccessHelper.IsDeveloper)
                     return;
                 foreach (FailureMessageAccessor fm in failures)
                 {
@@ -40,8 +43,9 @@ namespace RevitLogProjectLocation
                     e.SetProcessingResult(FailureProcessingResult.WaitForUserInput);
                 }
             }
-            catch
+            catch (Exception exception)
             {
+                Log.Error("Не удалось вычислить лог общих координат", exception);
             }
         }
     }

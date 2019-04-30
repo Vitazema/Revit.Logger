@@ -1,7 +1,6 @@
 namespace RevitLogProjectLocation
 {
     using System;
-    using System.Security.RightsManagement;
     using Autodesk.Revit.DB;
     using Logger;
 
@@ -26,6 +25,25 @@ namespace RevitLogProjectLocation
                 Math.Round(bPoint.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble().ToDegrees(), 2));
 
             return xyz.GetRoundedValuesAsString();
+        }
+        
+        /// <summary>
+        /// Взятие базовой точки проекта из документа
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public static BasePoint GetProjectBasePoint(this Document doc)
+        {
+            var locationPoints = new FilteredElementCollector(doc)
+                .OfClass(typeof(BasePoint))
+                .ToElements();
+            foreach (var locationPoint in locationPoints) {
+                if (locationPoint is BasePoint bp && !bp.IsShared) {
+                    return bp;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -54,14 +72,26 @@ namespace RevitLogProjectLocation
         /// <param name="fileName"></param>
         /// <param name="username"></param>
         /// <returns></returns>
-        public static string RemoveUserFileMark(this string fileName, string username)
+        public static string RemoveUserLocalFileMark(this string fileName, string username)
         {
             if (fileName.ToUpper().EndsWith(username.ToUpper()))
             {
-                return fileName.Substring(0, fileName.Length + username.Length + 1);
+                return fileName.Remove(fileName.Length - username.Length - 1);
             }
 
             return fileName;
+        }
+
+        /// <summary>
+        /// Убирает четыре знака в расширение файла, если таковое имеется. Работает с .dwg или .rvt
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static string RemoveFileExtension(this string fileName)
+        {
+            return fileName.EndsWith(".rvt")
+                   || fileName.EndsWith(".dwg")
+                ? fileName.Remove(fileName.Length - 4) : fileName;
         }
 
         /// <summary>
@@ -71,24 +101,27 @@ namespace RevitLogProjectLocation
         /// <returns></returns>
         public static string GetDocFullPath(this Document doc)
         {
-            string parentFileFullName;
-
-            var modelPath = doc.GetWorksharingCentralModelPath();
+            if (doc == null)
+                return "Document is null";
 
             if (doc.IsDetached)
             {
-                parentFileFullName = "Отсоединено";
+                return "Отсоединено";
             }
-            else if (modelPath != null)
+
+            if (doc.IsWorkshared)
             {
-                parentFileFullName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
+                if (doc.GetWorksharingCentralModelPath() is ModelPath modelPath)
+                {
+                    return ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
+                }
             }
             else
             {
-                parentFileFullName = doc.PathName != string.Empty ? doc.PathName : "Не сохранено";
+                return doc.PathName != string.Empty ? doc.PathName : "Не сохранено";
             }
 
-            return parentFileFullName;
+            return "Не определено";
         }
     }
 }
